@@ -1,18 +1,18 @@
 //Lista Provisional
 class Datos {
   List<String> supermercados = [
-    'alcampo',
-    'eroski',
-    'gadis',
-    'dia',
-    'mercadona',
-    'froiz',
-    'lidl',
-    'familia',
-    'coviran',
-    'hipercor',
-    'carrefour',
-    'aldi',
-    'el corte ingles'
+    'Alcampo',
+    'Eroski',
+    'Gadis',
+    'Dia',
+    'Mercadona',
+    'Froiz',
+    'Lidl',
+    'Familia',
+    'Coviran',
+    'Hipercor',
+    'Carrefour',
+    'Aldi',
+    'El Corte Ingles'
   ];
 }
