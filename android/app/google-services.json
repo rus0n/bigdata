@@ -1,0 +1,39 @@
+{
+  "project_info": {
+    "project_number": "1058043953021",
+    "project_id": "bigdata-18b08",
+    "storage_bucket": "bigdata-18b08.appspot.com"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:1058043953021:android:41dae6ca848e2bb3be5614",
+        "android_client_info": {
+          "package_name": "com.ruson.bigdata.bigdata"
+        }
+      },
+      "oauth_client": [
+        {
+          "client_id": "1058043953021-ql19rmqgftiv72kgqqs1995fov5scek8.apps.googleusercontent.com",
+          "client_type": 3
+        }
+      ],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBynX66H9xKlFbrjkC_fpUp2AkM5yhzeiw"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": [
+            {
+              "client_id": "1058043953021-ql19rmqgftiv72kgqqs1995fov5scek8.apps.googleusercontent.com",
+              "client_type": 3
+            }
+          ]
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}
