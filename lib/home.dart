@@ -2,7 +2,7 @@ import 'package:bigdata/add.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 
-import 'model/ticket.dart';
+import 'model/ticket_model.dart';
 
 class Home extends StatefulWidget {
   const Home({Key? key}) : super(key: key);
