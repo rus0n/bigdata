@@ -1,12 +1,18 @@
-import 'package:bigdata/service/db.dart';
+import 'dart:convert';
+import 'dart:math';
+
+import 'package:bigdata/model/ticket_model.dart';
+import 'package:bigdata/service/datos.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
+import 'package:get_storage/get_storage.dart';
 import 'package:openfoodfacts/model/parameter/TagFilter.dart';
 
 import 'package:openfoodfacts/openfoodfacts.dart';
 import 'package:openfoodfacts/utils/CountryHelper.dart';
-import 'package:openfoodfacts/utils/QueryType.dart';
 import 'package:openfoodfacts/utils/TagType.dart';
+import 'package:uuid/uuid.dart';
 
 class Add extends StatefulWidget {
   const Add({Key? key}) : super(key: key);
@@ -15,10 +21,17 @@ class Add extends StatefulWidget {
   State<Add> createState() => _AddState();
 }
 
-String supermercado = '';
-
 class _AddState extends State<Add> {
   List<Product> productos = [];
+
+  String supermercado = '';
+
+  bool persistenciaLocal = false;
+
+  final box = GetStorage();
+
+  Map<int, bool> opcionesDatabase = {0: true, 1: false};
+
   @override
   Widget build(BuildContext context) {
     final _formKey = GlobalKey<FormState>();
@@ -30,8 +43,13 @@ class _AddState extends State<Add> {
             IconButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
+                    box.writeIfNull('supermercado', supermercado);
                     Product? producto = await showSearch<Product?>(
-                        context: context, delegate: Search());
+                        context: context,
+                        delegate: Search(supermercado: supermercado));
+                    setState(() {
+                      supermercado = box.read('suppermercado');
+                    });
                     if (producto != null) {
                       setState(() {
                         productos.add(producto);
@@ -125,10 +143,94 @@ class _AddState extends State<Add> {
                       }),
                 ),
               ),
-              ElevatedButton.icon(
-                  onPressed: () => null,
-                  icon: const Icon(Icons.add_shopping_cart),
-                  label: const Text('Añadir ticket'))
+              Column(
+                children: List.generate(
+                    opcionesDatabase.length,
+                    (index) => CheckboxListTile(
+                        title: Text(index == 0
+                            ? 'Subir a la base de datos remota'
+                            : 'Guardar de manera local'),
+                        subtitle: Text(index == 0
+                            ? 'Guarda los datos en los servidores, hace falta conexion a internet'
+                            : 'Se escribiran los datos en el almacenamiento del dispositivo sin necesidad de conexion'),
+                        value: opcionesDatabase.values.elementAt(index),
+                        onChanged: (db) {
+                          setState(() {
+                            opcionesDatabase[index] = db!;
+                          });
+                        })),
+              ),
+              ButtonBar(
+                children: [
+                  ElevatedButton.icon(
+                      onPressed: () {
+                        int localidadRandom = Random().nextInt(8);
+                        String localidad;
+
+                        switch (localidadRandom) {
+                          case 1:
+                            localidad = 'Fene';
+                            break;
+                          case 2:
+                            localidad = 'Naron';
+                            break;
+                          case 3:
+                            localidad = 'Neda';
+                            break;
+                          default:
+                            localidad = 'Ferrol';
+                        }
+                        var uuid = Uuid();
+
+                        String id = uuid.v1();
+
+                        Ticket _ticket = Ticket(
+                            ticketId: id,
+                            supermercado: supermercado,
+                            localidad: localidad,
+                            fecha: DateTime.now().toString(),
+                            productos: productos);
+
+                        FirebaseFirestore.instance
+                            .collection('tickets')
+                            .doc(id)
+                            .set(_ticket.toJson());
+                      },
+                      icon: const Icon(Icons.add_shopping_cart),
+                      label: const Text('Añadir ticket')),
+                  ElevatedButton.icon(
+                      onPressed: () => showModalBottomSheet(
+                          context: context,
+                          builder: (context) {
+                            return Column(
+                              children: [
+                                Expanded(
+                                  child: SizedBox(
+                                    height: 400,
+                                    child: Padding(
+                                      padding: const EdgeInsets.all(8.0),
+                                      child: ListView(
+                                          children: List.generate(
+                                              productos.length,
+                                              (index) => Padding(
+                                                    padding:
+                                                        const EdgeInsets.all(
+                                                            8.0),
+                                                    child: Text(productos
+                                                        .elementAt(index)
+                                                        .toJson()
+                                                        .toString()),
+                                                  ))),
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            );
+                          }),
+                      icon: const Icon(Icons.javascript_outlined),
+                      label: const Text('Ver json'))
+                ],
+              ),
             ],
           ),
         ));
@@ -136,6 +238,10 @@ class _AddState extends State<Add> {
 }
 
 class Search extends SearchDelegate<Product?> {
+  Search({Key? key, required this.supermercado}) : super();
+
+  final String supermercado;
+
   @override
   String get searchFieldLabel => 'Buscar';
   final User _user =

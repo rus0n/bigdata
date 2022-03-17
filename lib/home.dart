@@ -34,12 +34,11 @@ class _HomeState extends State<Home> {
                         itemBuilder: (context, index) {
                           Ticket _ticket =
                               Ticket.fromFireStore(snapshot.data!.docs[index]);
-                          return Card(
-                            child: Column(
-                              children: [
-                                Center(child: Text(_ticket.supermercado))
-                              ],
-                            ),
+                          return ListTile(
+                            title: Text(_ticket.supermercado),
+                            subtitle: Text(_ticket.fecha),
+                            trailing:
+                                Text('${_ticket.productos.length} productos'),
                           );
                         });
                   } else {
