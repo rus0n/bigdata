@@ -1,3 +1,5 @@
+import 'dart:convert';
+
 import 'package:bigdata/add.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
@@ -14,12 +16,46 @@ class Home extends StatefulWidget {
 class _HomeState extends State<Home> {
   List<Ticket> tickets = [];
 
+  bool localData = false;
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('Big Data Project'),
-      ),
+          title: const Text('Big Data Project'),
+          bottom: PreferredSize(
+              preferredSize: const Size.fromHeight(60),
+              child: SwitchListTile(
+                  title: const Text(
+                    'Cambiar a base de datos local',
+                    style: TextStyle(color: Colors.white),
+                  ),
+                  activeColor: Colors.white,
+                  activeTrackColor: Colors.green,
+                  value: localData,
+                  onChanged: (value) => setState(() {
+                        localData = value;
+                      }))),
+          actions: [
+            IconButton(
+              icon: const Icon(Icons.javascript),
+              iconSize: 30,
+              onPressed: () => showModalBottomSheet(
+                  context: context,
+                  builder: (context) {
+                    return Column(
+                      children: [
+                        Expanded(
+                          child: SizedBox(
+                              height: 400,
+                              child: ListView(
+                                  children: [Text(jsonEncode(tickets))])),
+                        ),
+                      ],
+                    );
+                  }),
+            )
+          ]),
       body: Column(
         children: [
           Expanded(
@@ -34,11 +70,14 @@ class _HomeState extends State<Home> {
                         itemBuilder: (context, index) {
                           Ticket _ticket =
                               Ticket.fromFireStore(snapshot.data!.docs[index]);
+
                           return ListTile(
-                            title: Text(_ticket.supermercado),
+                            title: Text(_ticket.supermercado +
+                                ' | ' +
+                                _ticket.localidad),
                             subtitle: Text(_ticket.fecha),
                             trailing:
-                                Text('${_ticket.productos.length} productos'),
+                                Text('${_ticket.productos.length} producto/s'),
                           );
                         });
                   } else {

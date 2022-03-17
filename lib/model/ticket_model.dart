@@ -1,6 +1,6 @@
 import 'dart:convert';
 
-import 'package:bigdata/service/service.dart';
+import 'package:bigdata/service/local_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:openfoodfacts/model/Product.dart';
 import 'package:sqflite/sqflite.dart';
@@ -11,7 +11,7 @@ class Ticket {
   String supermercado;
   String localidad;
   String fecha;
-  List<Product> productos;
+  List<dynamic> productos;
 
   Ticket({
     required this.ticketId,
@@ -22,12 +22,13 @@ class Ticket {
   });
 
   factory Ticket.fromFireStore(DocumentSnapshot doc) {
+    List<dynamic> dyna = jsonDecode(doc.get('productos'));
     return Ticket(
       ticketId: doc.id,
       supermercado: doc.get('supermercado'),
       localidad: doc.get('localidad'),
       fecha: doc.get('fecha'),
-      productos: jsonDecode(doc.get('productos')),
+      productos: dyna.map<Product>((e) => Product.fromJson(e)).toList(),
     );
   }
 
@@ -37,7 +38,9 @@ class Ticket {
         supermercado: json['supermercado'],
         localidad: json['localidad'],
         fecha: json['fecha'],
-        productos: jsonDecode(json['productos']));
+        productos: (jsonDecode(json['productos']) as List<dynamic>)
+            .map<Product>((e) => Product.fromJson(e))
+            .toList());
   }
 
   Map<String, dynamic> toJson() => {
@@ -47,10 +50,4 @@ class Ticket {
         "fecha": fecha,
         "productos": jsonEncode(productos),
       };
-
-  Future<void> insertTicket(Ticket ticket) async {
-    final Database db = await Databases().databaseTickets();
-
-    await db.insert('tickets', ticket.toJson());
-  }
 }

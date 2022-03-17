@@ -3,10 +3,10 @@ import 'dart:math';
 
 import 'package:bigdata/model/ticket_model.dart';
 import 'package:bigdata/service/datos.dart';
+import 'package:bigdata/service/local_database.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_svg/flutter_svg.dart';
-import 'package:get_storage/get_storage.dart';
 import 'package:openfoodfacts/model/parameter/TagFilter.dart';
 
 import 'package:openfoodfacts/openfoodfacts.dart';
@@ -24,11 +24,9 @@ class Add extends StatefulWidget {
 class _AddState extends State<Add> {
   List<Product> productos = [];
 
-  String supermercado = '';
+  String? supermercado;
 
   bool persistenciaLocal = false;
-
-  final box = GetStorage();
 
   Map<int, bool> opcionesDatabase = {0: true, 1: false};
 
@@ -43,13 +41,10 @@ class _AddState extends State<Add> {
             IconButton(
                 onPressed: () async {
                   if (_formKey.currentState!.validate()) {
-                    box.writeIfNull('supermercado', supermercado);
                     Product? producto = await showSearch<Product?>(
                         context: context,
-                        delegate: Search(supermercado: supermercado));
-                    setState(() {
-                      supermercado = box.read('suppermercado');
-                    });
+                        delegate: Search(supermercado: supermercado!));
+                    setState(() {});
                     if (producto != null) {
                       setState(() {
                         productos.add(producto);
@@ -75,16 +70,19 @@ class _AddState extends State<Add> {
                     ),
                     validator: (value) =>
                         value == null ? 'Campo requerido' : null,
-                    hint: supermercado.isEmpty
-                        ? const Text('Selecciona Supermercado')
-                        : Text(supermercado),
+                    hint: const Text('Selecciona Supermercado'),
                     items: List.generate(
                         Datos().supermercados.length,
                         (index) => DropdownMenuItem(
                             value: Datos().supermercados.elementAt(index),
                             child:
                                 Text(Datos().supermercados.elementAt(index)))),
-                    onChanged: (supermercado) => supermercado = supermercado),
+                    value: supermercado,
+                    onChanged: (value) async {
+                      setState(() {
+                        supermercado = value!;
+                      });
+                    }),
               ),
               Expanded(
                 child: Container(
@@ -186,15 +184,28 @@ class _AddState extends State<Add> {
 
                         Ticket _ticket = Ticket(
                             ticketId: id,
-                            supermercado: supermercado,
+                            supermercado: supermercado!,
                             localidad: localidad,
                             fecha: DateTime.now().toString(),
                             productos: productos);
+                        if (opcionesDatabase[0]!) {
+                          FirebaseFirestore.instance
+                              .collection('tickets')
+                              .doc(id)
+                              .set(_ticket.toJson());
+                          Navigator.pop(context);
+                        }
 
-                        FirebaseFirestore.instance
-                            .collection('tickets')
-                            .doc(id)
-                            .set(_ticket.toJson());
+                        if (opcionesDatabase[1]!) {
+                          LocalDatabases().insertTicket(_ticket);
+                          Navigator.pop(context);
+                        }
+
+                        if (!opcionesDatabase[0]! && !opcionesDatabase[1]!) {
+                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
+                              content: Text(
+                                  'No has seleccinoado ninguna base de datos')));
+                        }
                       },
                       icon: const Icon(Icons.add_shopping_cart),
                       label: const Text('Añadir ticket')),
@@ -333,7 +344,7 @@ class Search extends SearchDelegate<Product?> {
                             height: 40,
                             placeholderBuilder: (BuildContext context) =>
                                 Container(
-                                    padding: const EdgeInsets.all(30.0),
+                                    padding: const EdgeInsets.all(20.0),
                                     child: const CircularProgressIndicator()),
                           )
                         ],
