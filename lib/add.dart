@@ -1,4 +1,3 @@
-import 'dart:convert';
 import 'dart:math';
 
 import 'package:bigdata/model/ticket_model.dart';
@@ -84,7 +83,8 @@ class _AddState extends State<Add> {
                       });
                     }),
               ),
-              Expanded(
+              Flexible(
+                flex: 2,
                 child: Container(
                   width: MediaQuery.of(context).size.width - 40,
                   decoration: BoxDecoration(
@@ -158,89 +158,92 @@ class _AddState extends State<Add> {
                           });
                         })),
               ),
-              ButtonBar(
-                children: [
-                  ElevatedButton.icon(
-                      onPressed: () {
-                        int localidadRandom = Random().nextInt(8);
-                        String localidad;
+              Flexible(
+                child: ButtonBar(
+                  children: [
+                    ElevatedButton.icon(
+                        onPressed: () {
+                          int localidadRandom = Random().nextInt(8);
+                          String localidad;
 
-                        switch (localidadRandom) {
-                          case 1:
-                            localidad = 'Fene';
-                            break;
-                          case 2:
-                            localidad = 'Naron';
-                            break;
-                          case 3:
-                            localidad = 'Neda';
-                            break;
-                          default:
-                            localidad = 'Ferrol';
-                        }
-                        var uuid = Uuid();
+                          switch (localidadRandom) {
+                            case 1:
+                              localidad = 'Fene';
+                              break;
+                            case 2:
+                              localidad = 'Naron';
+                              break;
+                            case 3:
+                              localidad = 'Neda';
+                              break;
+                            default:
+                              localidad = 'Ferrol';
+                          }
+                          var uuid = const Uuid();
 
-                        String id = uuid.v1();
+                          String id = uuid.v1();
 
-                        Ticket _ticket = Ticket(
-                            ticketId: id,
-                            supermercado: supermercado!,
-                            localidad: localidad,
-                            fecha: DateTime.now().toString(),
-                            productos: productos);
-                        if (opcionesDatabase[0]!) {
-                          FirebaseFirestore.instance
-                              .collection('tickets')
-                              .doc(id)
-                              .set(_ticket.toJson());
+                          Ticket _ticket = Ticket(
+                              ticketId: id,
+                              supermercado: supermercado!,
+                              localidad: localidad,
+                              fecha: DateTime.now().toString(),
+                              numeroProductos: productos.length,
+                              productos: productos);
+                          if (opcionesDatabase[0]!) {
+                            FirebaseFirestore.instance
+                                .collection('tickets')
+                                .doc(id)
+                                .set(_ticket.toJson());
+                          }
+
+                          if (opcionesDatabase[1]!) {
+                            LocalDatabases().insertTicket(_ticket);
+                          }
                           Navigator.pop(context);
-                        }
 
-                        if (opcionesDatabase[1]!) {
-                          LocalDatabases().insertTicket(_ticket);
-                          Navigator.pop(context);
-                        }
-
-                        if (!opcionesDatabase[0]! && !opcionesDatabase[1]!) {
-                          ScaffoldMessenger.of(context).showSnackBar(const SnackBar(
-                              content: Text(
-                                  'No has seleccinoado ninguna base de datos')));
-                        }
-                      },
-                      icon: const Icon(Icons.add_shopping_cart),
-                      label: const Text('Añadir ticket')),
-                  ElevatedButton.icon(
-                      onPressed: () => showModalBottomSheet(
-                          context: context,
-                          builder: (context) {
-                            return Column(
-                              children: [
-                                Expanded(
-                                  child: SizedBox(
-                                    height: 400,
-                                    child: Padding(
-                                      padding: const EdgeInsets.all(8.0),
-                                      child: ListView(
-                                          children: List.generate(
-                                              productos.length,
-                                              (index) => Padding(
-                                                    padding:
-                                                        const EdgeInsets.all(
-                                                            8.0),
-                                                    child: Text(productos
-                                                        .elementAt(index)
-                                                        .toJson()
-                                                        .toString()),
-                                                  ))),
+                          if (!opcionesDatabase[0]! && !opcionesDatabase[1]!) {
+                            ScaffoldMessenger.of(context).showSnackBar(
+                                const SnackBar(
+                                    content: Text(
+                                        'No has seleccinoado ninguna base de datos')));
+                          }
+                        },
+                        icon: const Icon(Icons.add_shopping_cart),
+                        label: const Text('Añadir ticket')),
+                    ElevatedButton.icon(
+                        onPressed: () => showModalBottomSheet(
+                            context: context,
+                            builder: (context) {
+                              return Column(
+                                children: [
+                                  Expanded(
+                                    child: SizedBox(
+                                      height: 400,
+                                      child: Padding(
+                                        padding: const EdgeInsets.all(8.0),
+                                        child: ListView(
+                                            children: List.generate(
+                                                productos.length,
+                                                (index) => Padding(
+                                                      padding:
+                                                          const EdgeInsets.all(
+                                                              8.0),
+                                                      child: Text(productos
+                                                          .elementAt(index)
+                                                          .toJson()
+                                                          .toString()),
+                                                    ))),
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ],
-                            );
-                          }),
-                      icon: const Icon(Icons.javascript_outlined),
-                      label: const Text('Ver json'))
-                ],
+                                ],
+                              );
+                            }),
+                        icon: const Icon(Icons.javascript_outlined),
+                        label: const Text('Ver json'))
+                  ],
+                ),
               ),
             ],
           ),
@@ -260,7 +263,6 @@ class Search extends SearchDelegate<Product?> {
 
   @override
   List<Widget>? buildActions(BuildContext context) {
-    // TODO: implement buildActions
     if (query.isNotEmpty) {
       return [
         IconButton(onPressed: () => query = '', icon: const Icon(Icons.clear))
@@ -288,7 +290,7 @@ class Search extends SearchDelegate<Product?> {
       TagFilter.fromType(
           tagFilterType: TagFilterType.BRANDS, tagName: supermercado),
       TagFilter.fromType(
-          tagFilterType: TagFilterType.CATEGORIES, tagName: query),
+          tagFilterType: TagFilterType.INGREDIENTS, tagName: query),
     ];
 
     final ProductSearchQueryConfiguration _configuration =
@@ -344,7 +346,7 @@ class Search extends SearchDelegate<Product?> {
                             height: 40,
                             placeholderBuilder: (BuildContext context) =>
                                 Container(
-                                    padding: const EdgeInsets.all(20.0),
+                                    padding: const EdgeInsets.all(5.0),
                                     child: const CircularProgressIndicator()),
                           )
                         ],
